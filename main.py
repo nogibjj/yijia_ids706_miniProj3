@@ -34,6 +34,7 @@ def calculate_statistics_pl(data):
     selected_columns = ["Temperature Minimum", "Temperature Maximum", "Precipitation"]
     data = data.select(selected_columns)
 
+    # Extract mean, median, std_dev and flatten arrays
     stats = {
         "mean": data.select(
             [pl.col(c).mean().alias(c) for c in selected_columns]
@@ -45,6 +46,11 @@ def calculate_statistics_pl(data):
             [pl.col(c).std().alias(c) for c in selected_columns]
         ).to_dict(as_series=False),
     }
+
+    for stat_name, stat_values in stats.items():
+        for key, value in stat_values.items():
+            stat_values[key] = value[0]
+
     return pl.DataFrame(stats)
 
 
@@ -85,6 +91,13 @@ def benchmark_pandas_vs_polars(data_filepath):
     return pandas_profile, polars_profile
 
 
+# Improving profiler readability for Markdown
+def clean_profiler_output(profiler_output):
+    """Clean profiler output for better readability in markdown."""
+    cleaned_output = profiler_output.replace("\x1b[", "").replace("\x1b[0m", "")
+    return cleaned_output
+
+
 # Markdown Report Generation
 def generate_md_report(
     stats, image_paths, pandas_profile, polars_profile, output_path_md
@@ -93,8 +106,10 @@ def generate_md_report(
     with open(output_path_md, "w") as file:
         # Descriptive statistics
         file.write("# Summary Report\n\n")
+
+        # Polars Descriptive Statistics
         file.write("## Descriptive Statistics (Polars)\n\n")
-        file.write(stats.to_pandas().to_markdown())
+        file.write(stats.to_pandas().to_markdown(index=True))
         file.write("\n\n")
 
         # Images
@@ -108,11 +123,11 @@ def generate_md_report(
         # Pandas profiling result
         file.write("### Pandas Profiling\n\n")
         file.write("```\n")
-        file.write(pandas_profile)
+        file.write(clean_profiler_output(pandas_profile))
         file.write("\n```\n")
 
         # Polars profiling result
         file.write("### Polars Profiling\n\n")
         file.write("```\n")
-        file.write(polars_profile)
+        file.write(clean_profiler_output(polars_profile))
         file.write("\n```\n")
