@@ -14,12 +14,24 @@ clean:
 	rm -rf .pytest_cache
 
 generate_report:
-	python -c "from main import load_data, calculate_statistics, create_histogram, generate_md_report; \
-	data = load_data('rdu-weather-history.csv'); \
-	stats = calculate_statistics(data); \
-	create_histogram(data, 'Temperature Maximum', 'temperature_maximum_distribution.png'); \
-	generate_md_report(stats, ['temperature_maximum_distribution.png'], 'summary_report.md')"
-	
+	python -c "from main import load_data, calculate_statistics, generate_md_report, benchmark_pandas_vs_polars, load_data_pl, calculate_statistics_pl, create_histogram_pl; \
+	\
+	# Filepath for the dataset \
+	data_filepath = 'rdu-weather-history.csv'; \
+	\
+	# Perform Polars-based data analysis \
+	data_pl = load_data_pl(data_filepath); \
+	stats_pl = calculate_statistics_pl(data_pl); \
+	\
+	# Generate histogram for 'Temperature Maximum' using Polars data \
+	create_histogram_pl(data_pl, 'Temperature Maximum', 'temperature_maximum_distribution.png'); \
+	\
+	# Benchmark Pandas vs Polars \
+	pandas_profile, polars_profile = benchmark_pandas_vs_polars(data_filepath); \
+	\
+	# Generate the markdown report with profiling results \
+	generate_md_report(stats_pl, ['temperature_maximum_distribution.png'], pandas_profile, polars_profile, 'summary_report.md');"
+
    # Git commands to add, commit, and push the report and PNG files
 	@if [ -n "$$(git status --porcelain)" ]; then \
 	    git config --local user.email "action@github.com"; \
