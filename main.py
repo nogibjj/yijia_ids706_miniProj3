@@ -47,10 +47,6 @@ def calculate_statistics_pl(data):
         ).to_dict(as_series=False),
     }
 
-    for stat_name, stat_values in stats.items():
-        for key, value in stat_values.items():
-            stat_values[key] = value[0]
-
     return pl.DataFrame(stats)
 
 
@@ -91,25 +87,64 @@ def benchmark_pandas_vs_polars(data_filepath):
     return pandas_profile, polars_profile
 
 
+# Helper funtions
 # Improving profiler readability for Markdown
 def clean_profiler_output(profiler_output):
-    """Clean profiler output for better readability in markdown."""
-    cleaned_output = profiler_output.replace("\x1b[", "").replace("\x1b[0m", "")
-    return cleaned_output
+    """Clean profiler output to only show the important information."""
+    lines = profiler_output.split("\n")
+    important_info = []
+    for line in lines:
+        if (
+            "Recorded" in line
+            or "Samples" in line
+            or "Duration" in line
+            or "CPU time" in line
+        ):
+            important_info.append(line)
+    return "\n".join(important_info)
 
 
-# Markdown Report Generation
+def format_polars_stats(stats_df):
+    """Reformat the Polars DataFrame to match the Pandas-like output."""
+    stats_dict = stats_df.to_pandas().to_dict(orient="list")
+
+    formatted_df = pd.DataFrame(
+        {
+            "Statistic": ["mean", "median", "std_dev"],
+            "Temperature Minimum": [
+                stats_dict["mean"][0]["Temperature Minimum"],
+                stats_dict["median"][0]["Temperature Minimum"],
+                stats_dict["std_dev"][0]["Temperature Minimum"],
+            ],
+            "Temperature Maximum": [
+                stats_dict["mean"][0]["Temperature Maximum"],
+                stats_dict["median"][0]["Temperature Maximum"],
+                stats_dict["std_dev"][0]["Temperature Maximum"],
+            ],
+            "Precipitation": [
+                stats_dict["mean"][0]["Precipitation"],
+                stats_dict["median"][0]["Precipitation"],
+                stats_dict["std_dev"][0]["Precipitation"],
+            ],
+        }
+    )
+
+    return formatted_df
+
+
+# Markdown Report Generation with cleaned profiler output
 def generate_md_report(
     stats, image_paths, pandas_profile, polars_profile, output_path_md
 ):
     """Generate a markdown report with the descriptive statistics, images, and profiling results."""
     with open(output_path_md, "w") as file:
-        # Descriptive statistics
         file.write("# Summary Report\n\n")
 
-        # Polars Descriptive Statistics
+        # Convert Polars stats to Pandas-like format
+        formatted_stats = format_polars_stats(stats)
+
         file.write("## Descriptive Statistics (Polars)\n\n")
-        file.write(stats.to_pandas().to_markdown(index=True))
+        file.write(formatted_stats.to_markdown(index=False))
         file.write("\n\n")
 
         # Images
@@ -123,11 +158,15 @@ def generate_md_report(
         # Pandas profiling result
         file.write("### Pandas Profiling\n\n")
         file.write("```\n")
-        file.write(clean_profiler_output(pandas_profile))
+        file.write(
+            clean_profiler_output(pandas_profile)
+        )  # Use the cleaned profiler output
         file.write("\n```\n")
 
         # Polars profiling result
         file.write("### Polars Profiling\n\n")
         file.write("```\n")
-        file.write(clean_profiler_output(polars_profile))
+        file.write(
+            clean_profiler_output(polars_profile)
+        )  # Use the cleaned profiler output
         file.write("\n```\n")

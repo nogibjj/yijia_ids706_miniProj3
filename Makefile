@@ -5,8 +5,8 @@ format:
 	black *.py
 
 lint:
-	flake8 --ignore=E501 *.py
-
+	flake8 --ignore=E501,W503 *.py
+	
 test: 
 	python3 -m pytest -cov=main test_main.py
 
