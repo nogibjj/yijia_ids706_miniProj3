@@ -60,9 +60,9 @@ def create_histogram_pl(data, column, filepath):
     plt.close()
 
 
-# Profiling using pyinstrument for performance comparison
+# Profiling for performance comparison
 def benchmark_pandas_vs_polars(data_filepath):
-    """Benchmark Pandas vs Polars for loading data and performing descriptive statistics using pyinstrument."""
+    """Benchmark Pandas vs Polars for loading data and performing descriptive statistics."""
 
     profiler = Profiler()
 
@@ -85,7 +85,7 @@ def benchmark_pandas_vs_polars(data_filepath):
     return pandas_profile, polars_profile
 
 
-# Shared Markdown Report Generation with Profiling
+# Markdown Report Generation
 def generate_md_report(
     stats, image_paths, pandas_profile, polars_profile, output_path_md
 ):
